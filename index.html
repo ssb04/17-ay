@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Seni Seviyorum</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Noto+Sans:wght@700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg-color: #000000;
+      }
+
+      /* Tam Ekran Kilitleme */
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--bg-color);
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+      }
+
+      #c {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+      }
+
+      #heart-content {
+        position: absolute;
+        top: 48%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        z-index: 10;
+        box-sizing: border-box;
+        pointer-events: none;
+        width: 85%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #message {
+        font-family: "Dancing Script", cursive;
+        color: #fff0f0;
+        text-shadow: 0 0 10px rgba(255, 50, 80, 0.6);
+        margin-bottom: 12px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+      }
+
+      #date {
+        font-family: "Noto Sans", sans-serif;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.8);
+        letter-spacing: 1px;
+        opacity: 0;
+        transition: opacity 1.5s ease;
+      }
+
+      #replay-btn {
+        position: absolute;
+        bottom: 25px;
+        right: 25px;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: rgba(255, 255, 255, 0.8);
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-family: "Noto Sans", sans-serif;
+        font-size: 14px;
+        cursor: pointer;
+        z-index: 20;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(4px);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #replay-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+        color: #fff;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+
+    <div id="heart-content">
+      <div id="message"></div>
+      <div id="date">17. Ay &bull; 13.05.2025</div>
+    </div>
+
+    <button id="replay-btn">Yeniden Oynat</button>
+
+    <script>
+      // === AYARLAR ===
+      const CONFIG = {
+        messageText:
+          "17 ay önce hayatıma girdin, 17 ayda hayatımın en güzel yeri oldun. Hangi dilde söylersem söyleyeyim, cevap hep aynı: Seni seviyorum. 💕",
+        wordAnimDuration: 600,
+        totalSpreadTime: 12000,
+        neonDrawTime: 2500, // Neon çizginin çizilme süresi (ms)
+        margin: 1,
+        gap: 1,
+        typewriterSpeed: 45,
+      };
+
+      const LANGUAGES = [
+        "Seni seviyorum",
+        "I love you",
+        "Te amo",
+        "Je t'aime",
+        "Ich liebe dich",
+        "Ti amo",
+        "Eu te amo",
+        "Я тебя люблю",
+        "愛しています",
+        "사랑해",
+        "我爱你",
+        "أحبك",
+        "دوستت دارم",
+        "אני אוהב אותך",
+        "मैं तुमसे प्यार करता हूँ",
+        "Σ' αγαπώ",
+        "Ik hou van jou",
+        "Jag älskar dig",
+        "Jeg elsker deg",
+        "Jeg elsker dig",
+        "Minä rakastan sinua",
+        "Kocham cię",
+        "Miluji tě",
+        "Szeretlek",
+        "Te iubesc",
+        "Обичам те",
+        "Волим те",
+        "Volim te",
+        "Я тебе люблю",
+        "Səni sevirəm",
+        "Men seni sevaman",
+        "Мен сені жақсы көремін",
+        "ฉันรักคุณ",
+        "Tôi yêu bạn",
+        "Aku cinta kamu",
+        "Saya cintakan awak",
+        "Mahal kita",
+        "Nakupenda",
+        "Ngiyakuthanda",
+        "Ek het jou lief",
+        "Ég elska þig",
+        "Taim i' ngra leat",
+        "Rwy'n dy garu di",
+        "T'estimo",
+        "Maite zaitut",
+        "Te amo",
+        "Mi amas vin",
+        "আমি তোমাকে ভালোবাসি",
+        "میں تم سے پیار کرتا ہوں",
+        "நான் உன்னை காதலிக்கிறேன்",
+        "म तिमीलाई माया गर्छु",
+        "მე შენ მიყვარხარ",
+        "Ես քեզ սիրում եմ",
+        "Би чамд хайртай",
+        "Ľúbim ťa",
+        "Ljubim te",
+        "Ma armastan sind",
+        "Es tevi mīlu",
+        "Aš tave myliu",
+        "Aloha wau iā 'oe",
+        "Kei te aroha au ki a koe",
+        "Inħobbok",
+        "Të dua",
+        "Volim te",
+        "Те сакам",
+        "Я цябе кахаю",
+        "Ech hunn dech gär",
+        "Quérote",
+        "我愛你",
+        "నేను నిన్ను ప్రేమిస్తున్నాను",
+        "मी तुझ्यावर प्रेम करतो",
+        "હું તને પ્રેમ કરું છું",
+        "ನಾನು ನಿನ್ನನ್ನು ಪ್ರೀತಿಸುತ್ತೇನೆ",
+        "ഞാൻ നിന്നെ സ്നേഹിക്കുന്നു",
+        "ਮੈਂ ਤੈਨੂੰ ਪਿਆਰ ਕਰਦਾ ਹਾਂ",
+        "මම ඔයාට ආදරෙයි",
+        "မင်းကိုချစ်တယ်",
+        "ខ្ញុំ​ស្រលាញ់​អ្នក",
+        "ຂ້ອຍຮັກເຈົ້າ",
+        "ང་ཁྱོད་ལ་དགའ།",
+        "مەن سېنى سۆيىمەن",
+        "Мен сени сүйөм",
+        "Men seni söýýärin",
+        "Ман туро дӯст медорам",
+        "زه تا سره مینه لرم",
+        "እወድሻለሁ",
+        "Mo nifẹ rẹ",
+        "A hụrụ m gị n'anya",
+        "Ina son ku",
+        "Waan ku jeclahay",
+        "Tiako ianao",
+        "Ou te alofa ia te oe",
+        "'Oku ou 'ofa 'ia koe",
+        "Au domoni iko",
+        "Ti tengu caru",
+        "Ik hâld fan dy",
+        "איך האָב דיר ליב",
+        "Mwen renmen ou",
+        "Aku tresna kowe",
+      ];
+
+      const canvas = document.getElementById("c");
+      const ctx = canvas.getContext("2d", { alpha: false });
+      const msgEl = document.getElementById("message");
+      const dateEl = document.getElementById("date");
+      const hContent = document.getElementById("heart-content");
+      const replayBtn = document.getElementById("replay-btn");
+
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+
+      let width, height, cx, cy, dpr;
+      let heartPolygonExact = [];
+      let hBox = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+      let words = [];
+
+      let startTime = null;
+      let neonStartTime = null;
+      let animState = "init"; // init -> draw -> type -> neon_draw -> done
+      let skipAnimation = false;
+      let animReqId = null;
+
+      // Neon ve Kıvılcım Efekti Değişkenleri
+      let sparks = [];
+      let neonMetrics = { coreWidth: 2, glowWidth: 6, sparkSize: 2 };
+
+      let lastWinWidth = window.innerWidth;
+      let lastWinHeight = window.innerHeight;
+      let resizeTimer = null;
+
+      function distToSegment(p, v, w) {
+        let l2 = (v.x - w.x) ** 2 + (v.y - w.y) ** 2;
+        if (l2 === 0) return Math.hypot(p.x - v.x, p.y - v.y);
+        let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return Math.hypot(
+          p.x - (v.x + t * (w.x - v.x)),
+          p.y - (v.y + t * (w.y - v.y)),
+        );
+      }
+
+      function distToPolygon(px, py, polygon) {
+        let minDist = Infinity;
+        for (let i = 0; i < polygon.length; i++) {
+          let next = (i + 1) % polygon.length;
+          let d = distToSegment({ x: px, y: py }, polygon[i], polygon[next]);
+          if (d < minDist) minDist = d;
+        }
+        return minDist;
+      }
+
+      function isPointInPolygon(px, py, polygon) {
+        let inside = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+          let xi = polygon[i].x,
+            yi = polygon[i].y;
+          let xj = polygon[j].x,
+            yj = polygon[j].y;
+          let intersect =
+            yi > py !== yj > py &&
+            px < ((xj - xi) * (py - yi)) / (yj - yi) + xi;
+          if (intersect) inside = !inside;
+        }
+        return inside;
+      }
+
+      function isBoxValid(tx, ty, tw, th) {
+        if (tx < 0 || ty < 0 || tx + tw > width || ty + th > height)
+          return false;
+        for (let w of words) {
+          if (
+            tx < w.x + w.w + CONFIG.gap &&
+            tx + tw + CONFIG.gap > w.x &&
+            ty < w.y + w.h + CONFIG.gap &&
+            ty + th + CONFIG.gap > w.y
+          ) {
+            return false;
+          }
+        }
+        if (
+          tx > hBox.maxX ||
+          tx + tw < hBox.minX ||
+          ty > hBox.maxY ||
+          ty + th < hBox.minY
+        )
+          return true;
+
+        let pts = [
+          { x: tx, y: ty },
+          { x: tx + tw, y: ty },
+          { x: tx, y: ty + th },
+          { x: tx + tw, y: ty + th },
+          { x: tx + tw / 2, y: ty },
+          { x: tx + tw / 2, y: ty + th },
+          { x: tx, y: ty + th / 2 },
+          { x: tx + tw, y: ty + th / 2 },
+          { x: tx + tw / 2, y: ty + th / 2 },
+        ];
+
+        for (let pt of pts) {
+          if (isPointInPolygon(pt.x, pt.y, heartPolygonExact)) return false;
+          for (let i = 0; i < heartPolygonExact.length; i++) {
+            let next = (i + 1) % heartPolygonExact.length;
+            if (
+              distToSegment(pt, heartPolygonExact[i], heartPolygonExact[next]) <
+              CONFIG.margin
+            ) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+
+      function packWords() {
+        words = [];
+        let vmin = Math.min(width, height);
+        let baseScale = vmin / 400;
+
+        let step = Math.max(5, Math.floor(8 * baseScale));
+        let minSize = Math.max(10, Math.floor(12 * baseScale));
+        let maxSize = Math.max(16, Math.floor(28 * baseScale));
+
+        let grid = [];
+
+        for (let x = -50; x <= width + 50; x += step) {
+          for (let y = -50; y <= height + 50; y += step) {
+            if (x < 0 || y < 0 || x > width || y > height) {
+              let d = distToPolygon(x, y, heartPolygonExact);
+              grid.push({ x, y, dist: d + Math.random() * 5 });
+              continue;
+            }
+            if (isPointInPolygon(x, y, heartPolygonExact)) continue;
+
+            let d = distToPolygon(x, y, heartPolygonExact);
+            grid.push({ x, y, dist: d + Math.random() * 5 });
+          }
+        }
+
+        grid.sort((a, b) => a.dist - b.dist);
+        let langIdx = 0;
+        ctx.textBaseline = "top";
+
+        for (let i = 0; i < grid.length; i++) {
+          let pt = grid[i];
+          let covered = false;
+          for (let w of words) {
+            if (
+              pt.x >= w.x &&
+              pt.x <= w.x + w.w &&
+              pt.y >= w.y &&
+              pt.y <= w.y + w.h
+            ) {
+              covered = true;
+              break;
+            }
+          }
+          if (covered) continue;
+
+          let langText = LANGUAGES[langIdx % LANGUAGES.length];
+          let sizes = [
+            Math.floor(minSize + Math.random() * (maxSize - minSize)),
+            minSize + 2,
+            minSize,
+            Math.max(8, Math.floor(8 * baseScale)),
+          ];
+
+          for (let s of sizes) {
+            ctx.font = `700 ${s}px "Noto Sans", sans-serif`;
+            let metrics = ctx.measureText(langText);
+            let tw = metrics.width;
+            let th = s * 1.25;
+
+            let tx = pt.x - tw / 2;
+            let ty = pt.y - th / 2;
+
+            if (isBoxValid(tx, ty, tw, th)) {
+              let hue = 345 + Math.random() * 15;
+              let sat = 75 + Math.random() * 25;
+              let lit = 45 + Math.random() * 20;
+              let alp = 0.75 + Math.random() * 0.25;
+
+              words.push({
+                text: langText,
+                x: tx,
+                y: ty,
+                w: tw,
+                h: th,
+                size: s,
+                hue,
+                sat,
+                lit,
+                alp,
+                langIndex: langIdx,
+              });
+              langIdx++;
+              break;
+            }
+          }
+        }
+      }
+
+      function setupGeometry() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = window.devicePixelRatio || 1;
+
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+
+        cx = width / 2;
+        cy = height / 2;
+
+        let rawHeart = [];
+        let rawMinX = Infinity,
+          rawMaxX = -Infinity,
+          rawMinY = Infinity,
+          rawMaxY = -Infinity;
+
+        for (let t = 0; t <= Math.PI * 2; t += 0.05) {
+          let hx = 16 * Math.pow(Math.sin(t), 3);
+          let hy =
+            13 * Math.cos(t) -
+            5 * Math.cos(2 * t) -
+            2 * Math.cos(3 * t) -
+            Math.cos(4 * t);
+          rawHeart.push({ x: hx, y: hy });
+          if (hx < rawMinX) rawMinX = hx;
+          if (hx > rawMaxX) rawMaxX = hx;
+          if (hy < rawMinY) rawMinY = hy;
+          if (hy > rawMaxY) rawMaxY = hy;
+        }
+
+        let rawW = rawMaxX - rawMinX;
+        let rawH = rawMaxY - rawMinY;
+        let rawCX = (rawMinX + rawMaxX) / 2;
+        let rawCY = (rawMinY + rawMaxY) / 2;
+
+        let isMobile = width < 768;
+        let targetW = width * (isMobile ? 0.9 : 0.85);
+        let targetH = height * (isMobile ? 0.65 : 0.75);
+        let scale = Math.min(targetH / rawH, targetW / rawW);
+
+        heartPolygonExact = [];
+        hBox = {
+          minX: Infinity,
+          maxX: -Infinity,
+          minY: Infinity,
+          maxY: -Infinity,
+        };
+
+        for (let pt of rawHeart) {
+          let sx = cx + (pt.x - rawCX) * scale;
+          let sy = cy - (pt.y - rawCY) * scale;
+          heartPolygonExact.push({ x: sx, y: sy });
+
+          if (sx < hBox.minX) hBox.minX = sx;
+          if (sx > hBox.maxX) hBox.maxX = sx;
+          if (sy < hBox.minY) hBox.minY = sy;
+          if (sy > hBox.maxY) hBox.maxY = sy;
+        }
+
+        hBox.minX -= CONFIG.margin + 5;
+        hBox.maxX += CONFIG.margin + 5;
+        hBox.minY -= CONFIG.margin + 5;
+        hBox.maxY += CONFIG.margin + 5;
+
+        // Responsive Neon Çizgi Kalınlıkları
+        let vmin = Math.min(width, height);
+        let baseScale = vmin / 400;
+        neonMetrics = {
+          coreWidth: Math.max(1.5, 2.5 * baseScale),
+          glowWidth: Math.max(4, 8 * baseScale),
+          sparkSize: Math.max(1, 1.8 * baseScale),
+        };
+
+        let safeWidth = rawW * scale * 0.75;
+        hContent.style.maxWidth = safeWidth + "px";
+        let fontSize = Math.min(40, Math.max(16, scale * 1.6));
+        msgEl.style.fontSize = fontSize + "px";
+      }
+
+      function startTypewriter() {
+        animState = "type";
+        hContent.style.display = "flex";
+        msgEl.innerHTML = "";
+        dateEl.style.opacity = 0;
+
+        if (skipAnimation || prefersReducedMotion) {
+          msgEl.innerHTML = CONFIG.messageText;
+          dateEl.style.opacity = 1;
+          animState = "done";
+          sparks = [];
+          showReplayBtn();
+          return;
+        }
+
+        let i = 0;
+        function typeChar() {
+          if (animState !== "type") return;
+          if (i < CONFIG.messageText.length) {
+            msgEl.innerHTML += CONFIG.messageText.charAt(i);
+            i++;
+            setTimeout(typeChar, CONFIG.typewriterSpeed);
+          } else {
+            dateEl.style.opacity = 1;
+            animState = "neon_draw";
+            neonStartTime = null;
+          }
+        }
+        typeChar();
+      }
+
+      function showReplayBtn() {
+        replayBtn.style.opacity = 1;
+        replayBtn.style.pointerEvents = "auto";
+      }
+
+      function draw(time) {
+        if (!startTime) startTime = time;
+        let elapsedTotal = time - startTime;
+
+        if (skipAnimation || prefersReducedMotion) {
+          elapsedTotal = 999999;
+        }
+
+        // Arka Plan
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, width, height);
+
+        // 1. KELİMELERİ ÇİZ
+        let allWordsFinished = true;
+        ctx.textBaseline = "top";
+        let delayPerWord =
+          words.length > 0 ? CONFIG.totalSpreadTime / words.length : 0;
+
+        for (let w of words) {
+          let wDelay = w.langIndex * delayPerWord;
+          let wElapsed = elapsedTotal - 100 - wDelay;
+
+          if (wElapsed > 0) {
+            let progress = Math.min(1, wElapsed / CONFIG.wordAnimDuration);
+            let ease = 1 - Math.pow(1 - progress, 3);
+
+            let currentAlpha = w.alp * ease;
+            if (
+              progress === 1 &&
+              animState === "done" &&
+              !prefersReducedMotion
+            ) {
+              currentAlpha = Math.max(
+                0,
+                Math.min(
+                  1,
+                  currentAlpha + Math.sin(time / 600 + w.langIndex) * 0.1,
+                ),
+              );
+            }
+
+            let currentScale = 0.8 + 0.2 * ease;
+
+            ctx.save();
+            ctx.globalAlpha = currentAlpha;
+            ctx.translate(w.x + w.w / 2, w.y + w.h / 2);
+            ctx.scale(currentScale, currentScale);
+            ctx.fillStyle = `hsl(${w.hue}, ${w.sat}%, ${w.lit}%)`;
+            ctx.font = `700 ${w.size}px "Noto Sans", sans-serif`;
+            ctx.fillText(w.text, -w.w / 2, -w.h / 2);
+            ctx.restore();
+
+            if (progress < 1) allWordsFinished = false;
+          } else {
+            allWordsFinished = false;
+          }
+        }
+
+        // 2. KELİMELER BİTTİYSE DAKTİLOYU BAŞLAT
+        if (allWordsFinished && animState === "draw") {
+          startTypewriter();
+        }
+
+        // 3. DAKTİLO BİTTİYSE NEON ÇİZGİYİ VE KIVILCIMLARI ÇİZ
+        if (animState === "neon_draw" || animState === "done") {
+          if (animState === "neon_draw" && !neonStartTime) neonStartTime = time;
+
+          let nProgress = 1;
+          if (animState === "neon_draw") {
+            let nElapsed = time - neonStartTime;
+            nProgress = Math.min(1, nElapsed / CONFIG.neonDrawTime);
+
+            if (nProgress === 1 && sparks.length === 0) {
+              animState = "done";
+              showReplayBtn();
+            }
+          }
+
+          let ptsCount = Math.max(
+            1,
+            Math.floor(nProgress * heartPolygonExact.length),
+          );
+          let pulse =
+            animState === "done" ? Math.sin(time / 200) * 0.5 + 0.5 : 1;
+
+          if (ptsCount > 1) {
+            ctx.save();
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            // Dış Neon Parlaması (Glow)
+            ctx.beginPath();
+            ctx.moveTo(heartPolygonExact[0].x, heartPolygonExact[0].y);
+            for (let i = 1; i < ptsCount; i++) {
+              ctx.lineTo(heartPolygonExact[i].x, heartPolygonExact[i].y);
+            }
+            ctx.lineWidth = neonMetrics.glowWidth + pulse * 3;
+            ctx.strokeStyle = `rgba(255, 30, 80, ${0.4 + pulse * 0.4})`;
+            ctx.shadowBlur = 15 + pulse * 10;
+            ctx.shadowColor = "rgba(255, 30, 80, 0.9)";
+            ctx.stroke();
+
+            // İç Parlak Çekirdek (Core)
+            ctx.beginPath();
+            ctx.moveTo(heartPolygonExact[0].x, heartPolygonExact[0].y);
+            for (let i = 1; i < ptsCount; i++) {
+              ctx.lineTo(heartPolygonExact[i].x, heartPolygonExact[i].y);
+            }
+            ctx.lineWidth = neonMetrics.coreWidth;
+            ctx.strokeStyle = `rgba(255, 200, 220, ${0.8 + pulse * 0.2})`;
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = "#ffffff";
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // Kıvılcımları (Sparks) Üret
+          if (animState === "neon_draw" && nProgress < 1 && ptsCount > 0) {
+            let leadPt = heartPolygonExact[ptsCount - 1];
+            for (let i = 0; i < 5; i++) {
+              sparks.push({
+                x: leadPt.x,
+                y: leadPt.y,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                life: 1,
+                decay: 0.015 + Math.random() * 0.03,
+                size: neonMetrics.sparkSize + Math.random() * 2.5,
+                hue: 340 + Math.random() * 20,
+              });
+            }
+          }
+
+          // Kıvılcımları Çiz ve Güncelle
+          if (sparks.length > 0) {
+            ctx.save();
+            ctx.globalCompositeOperation = "lighter"; // Ateş/Işık efekti
+            for (let i = sparks.length - 1; i >= 0; i--) {
+              let s = sparks[i];
+              s.x += s.vx;
+              s.y += s.vy;
+              s.vy += 0.15; // Yerçekimi etkisi
+              s.life -= s.decay;
+
+              if (s.life <= 0) {
+                sparks.splice(i, 1);
+                continue;
+              }
+
+              ctx.beginPath();
+              ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+              ctx.fillStyle = `hsla(${s.hue}, 100%, 70%, ${s.life})`;
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = `hsl(${s.hue}, 100%, 50%)`;
+              ctx.fill();
+            }
+            ctx.restore();
+          }
+        }
+
+        animReqId = requestAnimationFrame(draw);
+      }
+
+      function init() {
+        if (animReqId) cancelAnimationFrame(animReqId);
+        replayBtn.style.opacity = 0;
+        replayBtn.style.pointerEvents = "none";
+        hContent.style.display = "none";
+        msgEl.innerHTML = "";
+        dateEl.style.opacity = 0;
+
+        sparks = [];
+        setupGeometry();
+        packWords();
+
+        startTime = null;
+        neonStartTime = null;
+        animState = "draw";
+        animReqId = requestAnimationFrame(draw);
+      }
+
+      window.addEventListener("resize", () => {
+        let widthDiff = Math.abs(window.innerWidth - lastWinWidth);
+        let heightDiff = Math.abs(window.innerHeight - lastWinHeight);
+
+        if (widthDiff < 50 && heightDiff < 150) return;
+
+        lastWinWidth = window.innerWidth;
+        lastWinHeight = window.innerHeight;
+
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          skipAnimation = true;
+          init();
+        }, 300);
+      });
+
+      replayBtn.addEventListener("click", () => {
+        skipAnimation = false;
+        init();
+      });
+
+      document.fonts.ready.then(() => {
+        setTimeout(init, 300);
+      });
+    </script>
+  </body>
+</html>
